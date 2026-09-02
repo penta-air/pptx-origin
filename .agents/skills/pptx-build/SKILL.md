@@ -1,0 +1,56 @@
+---
+name: pptx-build
+description: 完成した projects/<slug>/ssot.md と、ブランドの design-system/<brand>/theme.js および design-system/<brand>/components.js(固定の構造プリミティブ群――タイトル/セクション/クロージングの識別スライド、要素を並べるグリッド、指標を強調するメトリック行)から、実際の .pptx デッキを生成する。処理は .agents/skills/pptx/ に導入済みの公式Anthropic pptxスキルへ全面的に委譲する。固定プリミティブに当てはまる内容はそのプリミティブを呼び出し、それ以外はブランドの DESIGN_SYSTEM.md のデザインシステム仕様(支配的なカラーの役割、モチーフ、装飾ルール、スペーシンググリッド、フォントの組み合わせ)に従って公式スキルがスライドごとに自由にデザインする。最終デッキは projects/<slug>/<slug>.pptx に書き出され、完了報告前に pptx-qa を自動実行する。完成したSSOTから実際にPPTXファイルを生成・更新したい場合、または既に生成済みのデッキを編集する場合に使用する――「このssotからスライドを作って」「generate the deck」「pptxを生成して」「デッキをビルドして」など。内容の計画・アウトライン作成には使用しない(それは先に実行すべき pptx-ssot の役割)。このスキルは最後の内部ステップとして既に pptx-qa を呼び出しているため、このスキル完了直後に pptx-qa を別途呼び出さないこと。pptx-qa を単独で呼ぶのは、以前のセッションで作成済みのデッキを単体で再チェックする場合のみとする。
+---
+
+# pptx-build
+
+## この Skill の役割
+
+`projects/<slug>/ssot.md` と `design-system/<brand>/theme.js`・`design-system/<brand>/components.js`(固定プリミティブ)・`design-system/<brand>/DESIGN_SYSTEM.md`(デザインシステムスペック)を入力に、公式 Anthropic pptx スキルに完全に委譲する薄いオーケストレーション Skill。過去に自前実装で「画像取得の質の低さ」「デザインのAI感」に苦しんだ経験から、本 Skill が独自の判断基準・独自のデザイン原則を即興で発明してスライドを組み立てることは**絶対に禁止**。固定プリミティブに当てはまる内容は該当関数をそのまま呼ぶだけであり、当てはまらない内容も、公式pptxスキルの「Creating with pptxgenjs — gotchas」節の手順とDesign Ideas、およびブランドの`DESIGN_SYSTEM.md`が定めるデザインシステムスペックの範囲内でのみ設計する — この範囲を外れた独自の色選び・レイアウト発想は行わない。
+
+## 前提
+
+`.agents/skills/pptx/` に公式 pptx スキルが導入済みであること (README のセットアップ手順 `npx skills add https://github.com/anthropics/skills --skill pptx --agent universal -y` で導入される)。未導入なら、まずそちらを案内する。
+
+## 手順
+
+1. **入力を揃える。**
+   - `projects/<slug>/ssot.md` (対象読者・目的・章構成・各章の要点が書かれた SSOT。ユーザーが指定していなければ `projects/` 配下の各ディレクトリから選んでもらう)
+   - **使用するブランド `<brand>` を決める。** `design-system/` 配下のブランドディレクトリ(`design-system/<brand>/theme.js` を持つもの)を確認する。1つしかなければそれを使う。複数ある、またはユーザーが明示していない場合はどのブランドを使うか確認する。1つも無ければ、先に `pptx-design-system-init` Skill を実行するよう案内する。
+   - `design-system/<brand>/theme.js` (色・フォント・サイズ・余白の定数)
+   - `design-system/<brand>/components.js` (このブランドの固定プリミティブ: `addTitleSlide`/`addSectionSlide`/`addClosingSlide`/`addPeerGridSlide`/`addMetricRowSlide`/`applyChrome`。`require()`して直接呼び出す。既存デッキを編集する場合は代わりに編集対象の `.pptx` ファイルを使う)
+   - `design-system/<brand>/DESIGN_SYSTEM.md` (このブランドのデザインシステムスペック。`pptx-design-system-init` が公式pptxスキルの助けを借りてブランドごとに新規に書き起こしたもので、視覚言語・装飾ルール・余白グリッド・フォントペアリング・固定プリミティブ一覧・自由設計スライドの指針を含む)
+   - `.agents/docs/fixed-primitives-contract.md` (固定プリミティブの内容契約と、自由設計カテゴリの参考一覧。ブランドに依存しない共通ドキュメント)
+
+2. **`.agents/skills/pptx/SKILL.md` を読み、その指示に厳密に従う。**
+   - **新規作成の場合**: 同スキルの「Creating with pptxgenjs — gotchas」節の手順に従い、`design-system/<brand>/theme.js` の定数 (`colors`/`fonts`/`text`/`slide`/`spacing`/`shadow`) と `design-system/<brand>/components.js` (`require()`して固定プリミティブ関数を呼び出す) を使って PptxGenJS スクリプトを書き、実行してデッキを生成する。
+   - **既存デッキの編集の場合**: 編集対象が PptxGenJS 製のスクリプトであればそのスクリプトを編集して再実行する。それ以外 (手作業で作られた .pptx 等) の場合は、同スキルの「Editing existing decks and templates」節の XML 編集ワークフロー (unpack → 編集 → pack) に従う。
+   - どちらのケースでも、公式スキルの指示と本 Skill の指示が矛盾する場合は**公式スキルの指示を優先する**。本 Skill はあくまで入力を揃えて公式スキルに橋渡しするだけの役割。
+
+3. **各章の内容ごとに、固定プリミティブに当てはまるか自由設計かを判断する。**
+   SSOT の「章構成」「各章の詳細」に書かれた内容を見て、まず `.agents/docs/fixed-primitives-contract.md` の固定プリミティブ契約(表紙・章区切り・クロージング・対等な要素の列挙・指標の強調)に当てはまるかを確認する。
+
+   - **当てはまる場合**: `design-system/<brand>/components.js`を`require()`し、該当関数(`addTitleSlide`/`addSectionSlide`/`addClosingSlide`/`addPeerGridSlide`/`addMetricRowSlide`)をそのまま呼ぶ。この関数の中身を書き換えたり、同等の見た目を独自に再実装したりしない — 固定プリミティブはブランドの識別モーメント・ジオメトリの一貫性を保証するために存在するので、デッキごとに書き直すと意味がなくなる。
+   - **当てはまらない場合**(標準コンテンツ・画像中心・テキスト+画像・比較・テーブル・引用・2×2マトリクス・プロセスタイムライン・強調メッセージ等): `pptx-build`がこのデッキのために都度ゼロから`pres.addSlide()`を書いて設計する。ただしプロセスタイムラインのように件数可変で一貫した配置が欲しい内容は、`addPeerGridSlide`の`items[].heading`に手順番号を含める形で流用してよい(`.agents/docs/fixed-primitives-contract.md`参照)。`design-system/<brand>/DESIGN_SYSTEM.md`のデザインシステムスペック(ドミナントカラーの役割・モチーフ・装飾ルール・余白グリッド・フォントペアリング)と、公式pptxスキルのDesign Ideas/Avoidリストに従う。`.agents/docs/fixed-primitives-contract.md`の自由設計カテゴリは着想の参考として使ってよいが、そこに書かれた見せ方に縛られる必要はない。ランニング要素(ページ番号等)は固定プリミティブと同じ`applyChrome`を呼んで一貫性を保つ。
+
+   固定プリミティブ・自由設計のどちらであっても、**同一の見た目を連続して使うことは避ける** — 単調な資料になり、過去に問題視された「AI感のあるデザイン」の一因になるため、章が変わるごとに視覚的な変化を意識する。
+
+   一方で、一般的なプレゼンテーションデザインの定石として「1つのデッキ内で使う視覚パターンの種類は3〜5種程度に絞ったほうが統一感が保たれる」とされている。自由設計スライドを無理に多様なバリエーションで埋め尽くそうとせず、SSOTの内容に合う3〜5種程度の構成パターンに絞り込み、その範囲内で章ごとに使い分けることを基本とする(「同一の見た目の連続使用を避ける」と両立させる: デッキ全体では少数精鋭の構成パターンを使い回しつつ、隣接する章では同じ構成を連続させない)。**ただし、ユーザーがそれ以上のバリエーションを使うよう明示的に指示した場合や、SSOTの内容上どうしても3〜5種では表現しきれない場合は、この指針よりもユーザーの指示・実際の内容ニーズを優先する。**
+
+   **SSOTの「ボリューム感」・各章の「スライド枚数の目安」は目安であり、厳密な上限ではない。目安の ±30% 程度までは前後してよい。** 特にセクション区切りスライド (`addSectionSlide`) は、ページ数の目安を守るために一部の章だけ省略する、という扱いをしてはならない。使うなら全ての章の導入で一貫して使い、使わないなら全ての章で使わない — 章によって区切りページの有無がばらつく構成は避ける。ページ数の目安を守ることより、レイアウトの一貫性と内容の充実を優先する。
+
+4. **出力先は入力の `ssot.md` と同じ `projects/<slug>/` ディレクトリを既定とする。**
+   1件の資料の材料 (SSOT) と最終成果物 (完成デッキ・生成スクリプト) を同じ場所にまとめ、後から見つけやすくするため、`output/` のような別のディレクトリには出力しない。新規生成の場合、`projects/<slug>/` の中に完成した `<slug>.pptx` と、それを生成した PptxGenJS スクリプト (例: `build-<slug>.js`) を同梱する。生成スクリプトは使い捨ての一時ファイルではなく、再現性のための成果物としてこの位置に明示的に残す (リポジトリ直下や一時ディレクトリに書き捨てない)。`projects/<slug>/` は丸ごと `.gitignore` されている(このリポジトリはクローンして使うためのものであり、生成した資料をコミットバックしてもらう想定はない)。既存デッキを編集する場合 (unpack→編集→pack ワークフロー) は、そのデッキが元々置かれていた場所を維持してよく、このディレクトリ規則は新規生成時のみ適用する。
+
+5. **生成後、続けて `pptx-qa` Skill を自動的に実行する。**
+   デッキが生成できたら、ユーザーに確認を取らずそのまま `pptx-qa` Skill (公式 pptx スキルのビジュアル検査 + 本リポジトリ独自の4観点) を実行する。`pptx-qa`が問題を報告した場合は本 Skill の手順に戻って修正し (新規作成なら PptxGenJS スクリプトの修正、既存編集なら「Editing existing decks and templates」節のワークフロー)、再度 `pptx-qa` を実行する。指摘が解消されるか、同種の指摘が解消されないまま繰り返される等これ以上の自動修正が合理的でないと判断できるまでこれを繰り返す。
+
+6. **完了報告する。**
+   QA を経て確定した出力先の `.pptx` ファイルパスと、QA で見つかり修正した点 (あれば) をユーザーに報告する。
+
+## やってはいけないこと
+
+- 公式 pptx スキルを経由せず、自前で python-pptx / PptxGenJS の呼び出しコードを即興で書いて実行すること。
+- `.agents/skills/pptx/` の指示を読まずに、記憶や推測でスライド生成を進めること。
+- 画像を独自の画像検索ロジックで取得すること。画像の扱いも公式スキルの指示 (「Creating with pptxgenjs — gotchas」/「Editing existing decks and templates」) に従う。

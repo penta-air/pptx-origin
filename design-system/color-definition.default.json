@@ -1,0 +1,7 @@
+{
+  "brand": { "primary": "15803D", "secondary": "A16207" },
+  "text": { "primary": "434343", "secondary": "595959" },
+  "background": { "default": "FFFFFF", "accent": "F3F3F3" },
+  "border": "D9D9D9",
+  "font": { "heading": "Noto Sans JP", "body": "Noto Sans JP" }
+}

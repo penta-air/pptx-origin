@@ -1,0 +1,37 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+
+# OS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Claude Code local session state (machine-specific, not shared)
+.claude/scheduled_tasks.lock
+
+# User-generated brand design-system bundles (color-definition.json/theme.js/preview.pptx).
+# This repo is meant to be cloned and used, not to accumulate each user's own brand
+# assets in git history. "default" is the one exception: it's the zero-config bundle
+# generated from color-definition.default.json and kept committed so the pipeline
+# works immediately after clone. design-system/presets/ is shared tooling (preset
+# palettes), not a brand bundle, so it must stay excluded from this pattern too.
+design-system/*/
+!design-system/default/
+!design-system/presets/
+
+# Generated per-deck projects (ssot.md + generated .pptx + build script, bundled
+# together under projects/<slug>/ so one deck's materials live in one place).
+# Keep the directory itself via projects/.gitkeep. Never intended to be pushed.
+projects/*
+!projects/.gitkeep
+
+# Official Anthropic pptx skill, fetched by the setup step in README.md
+# (this repo's own pptx-* skills under .agents/skills/ are NOT covered by this
+# pattern and stay committed)
+/.agents/skills/pptx/

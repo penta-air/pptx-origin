@@ -1,0 +1,7 @@
+{
+  "brand": { "primary": "C2410C", "secondary": "92400E" },
+  "text": { "primary": "292524", "secondary": "78716C" },
+  "background": { "default": "FFFFFF", "accent": "FFF7ED" },
+  "border": "E7E0D9",
+  "font": { "heading": "Arial", "body": "Arial" }
+}

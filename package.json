@@ -1,0 +1,17 @@
+{
+  "name": "pptx-origin",
+  "version": "1.0.0",
+  "description": "Clone and set up to start generating PPTX decks with AI agents via the official Anthropic pptx skill.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/penta-air/pptx-origin.git"
+  },
+  "scripts": {
+    "generate-theme": "node design-system/generate-theme.js",
+    "generate-components:default": "node design-system/default/components.js"
+  },
+  "dependencies": {
+    "pptxgenjs": "^4.0.1"
+  },
+  "license": "MIT"
+}

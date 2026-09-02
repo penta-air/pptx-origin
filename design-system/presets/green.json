@@ -1,0 +1,7 @@
+{
+  "brand": { "primary": "059669", "secondary": "F59E0B" },
+  "text": { "primary": "1F2937", "secondary": "6B7280" },
+  "background": { "default": "FFFFFF", "accent": "ECFDF5" },
+  "border": "D1FAE5",
+  "font": { "heading": "Arial", "body": "Arial" }
+}
