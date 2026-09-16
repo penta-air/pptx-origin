@@ -1,8 +1,8 @@
 // design-system/default/components.js
 //
-// defaultブランドの固定プリミティブ実装。視覚言語「Bold Bento」: 塗り面(セル)を
+// defaultブランドの定型スライド実装。視覚言語「Bold Bento」: 塗り面(セル)を
 // 情報の単位として使い、角丸・影は使わない。アンカーセル(プライマリ全面塗り)は
-// レイアウトが非対称な箇所(表紙・章区切り・クロージング・対等要素の主要セル等)限定。
+// レイアウトが非対称な箇所(表紙・章区切り・クロージング等)限定。
 // 詳細はDESIGN_SYSTEM.md参照。実行: node design-system/default/components.js
 
 "use strict";
@@ -51,8 +51,8 @@ function estimateTextWidthInches(str, fontSizePt) {
 
 /**
  * 左上の小さなキッカーバッジ。構成が異なるスライド群に一律の帯を被せるとレイアウトの
- * 違いが失われるため、意図的に共通ヘッダー帯を持たない。タイトル省略時(指標強調など)
- * は呼ばない。
+ * 違いが失われるため、意図的に共通ヘッダー帯を持たない。数値自体が内容を語るスライド等、
+ * タイトルを省略したいスライドでは呼ばない。
  */
 function addKicker(slide, title) {
   const { colors, fonts, text, spacing } = theme;
@@ -329,222 +329,7 @@ function addClosingSlide(pres, theme, content) {
   return slide;
 }
 
-// content: { title?, items: [{ heading, body? }] (2〜6件), pageNumber }。全セルを同じ淡色セルに
-// 統一し、特定の1件を固定でアンカー化しない——重要な項目はSSOT次第であり、位置で決め打ちすると
-// 内容と無関係な強調が毎回同じ場所に出るため。件数ごとの行分割(GRID_ROWS)は固定し、同じ件数
-// なら常に同じ配置になる。
-const GRID_ROWS = {
-  2: [2],
-  3: [3],
-  4: [2, 2],
-  5: [3, 2],
-  6: [3, 3],
-};
-
-function addPeerGridSlide(pres, theme, content) {
-  const { colors, fonts, text, slide: slideSize, spacing } = theme;
-  const { title, items = [], pageNumber } = content;
-
-  const slide = pres.addSlide();
-  slide.background = { color: colors.bgDefault };
-
-  const hasKicker = Boolean(title);
-  if (hasKicker) addKicker(slide, title);
-
-  const count = Math.min(Math.max(items.length, 2), 6);
-  const list = items.slice(0, count);
-  const rows = GRID_ROWS[count];
-  const maxCols = Math.max(...rows);
-
-  const bodyTop = contentTopY(hasKicker);
-  const bodyBottom = contentBottomY(Boolean(pageNumber));
-  const bodyHeight = bodyBottom - bodyTop;
-  const totalWidth = slideSize.width - spacing.marginX * 2;
-
-  const cellWidth = (totalWidth - spacing.gap * (maxCols - 1)) / maxCols;
-  const cellHeight = (bodyHeight - spacing.gap * (rows.length - 1)) / rows.length;
-
-  let index = 0;
-  rows.forEach((cols, rowIndex) => {
-    const rowWidth = cols * cellWidth + spacing.gap * (cols - 1);
-    const rowOffsetX = spacing.marginX + (totalWidth - rowWidth) / 2;
-    const y = bodyTop + rowIndex * (cellHeight + spacing.gap);
-
-    for (let c = 0; c < cols; c += 1) {
-      const item = list[index];
-      const x = rowOffsetX + c * (cellWidth + spacing.gap);
-
-      slide.addShape("rect", {
-        x,
-        y,
-        w: cellWidth,
-        h: cellHeight,
-        fill: { color: colors.bgAccent },
-        line: { type: "none" },
-      });
-
-      // 半透明の連番は強調ではなく、対等要素であることの順序可視化のための目印。
-      slide.addText(String(index + 1).padStart(2, "0"), {
-        x: x + 0.2,
-        y: y + 0.12,
-        w: cellWidth - 0.4,
-        h: 0.35,
-        fontFace: fonts.heading,
-        fontSize: text.subheading,
-        bold: true,
-        color: colors.primary,
-        transparency: 55,
-      });
-
-      if (item.body) {
-        slide.addText(item.heading, {
-          x: x + 0.2,
-          y: y + 0.5,
-          w: cellWidth - 0.4,
-          h: 0.4,
-          fontFace: fonts.heading,
-          fontSize: text.small,
-          bold: true,
-          color: colors.textPrimary,
-        });
-
-        slide.addText(item.body, {
-          x: x + 0.2,
-          y: y + 0.9,
-          w: cellWidth - 0.4,
-          h: cellHeight - 1.05,
-          valign: "top",
-          fontFace: fonts.body,
-          fontSize: text.caption,
-          color: colors.textSecondary,
-        });
-      } else {
-        // body省略時(アジェンダ的な単純列挙): heading自体を大きく縦中央に置く。
-        slide.addText(item.heading, {
-          x: x + 0.2,
-          y: y + 0.45,
-          w: cellWidth - 0.4,
-          h: cellHeight - 0.55,
-          valign: "middle",
-          fontFace: fonts.heading,
-          fontSize: text.subheading,
-          bold: true,
-          color: colors.textPrimary,
-        });
-      }
-
-      index += 1;
-    }
-  });
-
-  applyChrome(slide, theme, { pageNumber });
-
-  return slide;
-}
-
-// content: { title?, metrics: [{ value, label, trend? }] (2〜4件), pageNumber }。主指標
-// (metrics[0])のみアンカーセルにする非対称は、このレイアウトの目的自体(先頭を主指標として
-// 強調する)に由来し、内容依存の決め打ちではない。titleが省略された場合はキッカーを出さない
-// (数値自体が内容を語るスライドが多いため)。
-function addMetricRowSlide(pres, theme, content) {
-  const { colors, fonts, text, slide: slideSize, spacing } = theme;
-  const { title, metrics = [], pageNumber } = content;
-
-  const slide = pres.addSlide();
-  slide.background = { color: colors.bgDefault };
-
-  const hasKicker = Boolean(title);
-  if (hasKicker) addKicker(slide, title);
-
-  const count = Math.min(Math.max(metrics.length, 2), 4);
-  const list = metrics.slice(0, count);
-  const [primary, ...rest] = list;
-  const trendGlyph = { up: "▲", down: "▼", flat: "→" };
-
-  const bodyTop = contentTopY(hasKicker);
-  const bodyBottom = contentBottomY(Boolean(pageNumber));
-  const bodyHeight = bodyBottom - bodyTop;
-
-  const primaryWidth = (slideSize.width - spacing.marginX * 2 - spacing.gap) * 0.42;
-  const restX = spacing.marginX + primaryWidth + spacing.gap;
-  const restWidth = slideSize.width - spacing.marginX - restX;
-
-  slide.addShape("rect", {
-    x: spacing.marginX,
-    y: bodyTop,
-    w: primaryWidth,
-    h: bodyHeight,
-    fill: { color: colors.primary },
-    line: { type: "none" },
-  });
-  slide.addText(primary.value, {
-    x: spacing.marginX + 0.3,
-    y: bodyTop + 0.3,
-    w: primaryWidth - 0.6,
-    h: bodyHeight * 0.55,
-    valign: "bottom",
-    fontFace: fonts.heading,
-    fontSize: 40,
-    bold: true,
-    color: colors.bgDefault,
-  });
-  slide.addText(
-    primary.trend ? `${primary.label} ${trendGlyph[primary.trend] ?? ""}` : primary.label,
-    {
-      x: spacing.marginX + 0.3,
-      y: bodyTop + bodyHeight * 0.55 + 0.15,
-      w: primaryWidth - 0.6,
-      h: 0.4,
-      fontFace: fonts.body,
-      fontSize: text.small,
-      color: colors.bgDefault,
-    }
-  );
-
-  const restCellHeight =
-    (bodyHeight - spacing.gap * (rest.length - 1)) / Math.max(rest.length, 1);
-  rest.forEach((metric, index) => {
-    const y = bodyTop + index * (restCellHeight + spacing.gap);
-
-    slide.addShape("rect", {
-      x: restX,
-      y,
-      w: restWidth,
-      h: restCellHeight,
-      fill: { color: colors.bgAccent },
-      line: { type: "none" },
-    });
-    slide.addText(metric.value, {
-      x: restX + 0.25,
-      y: y + 0.1,
-      w: restWidth - 0.5,
-      h: restCellHeight * 0.55,
-      valign: "bottom",
-      fontFace: fonts.heading,
-      fontSize: text.heading,
-      bold: true,
-      color: colors.primary,
-    });
-    slide.addText(
-      metric.trend ? `${metric.label} ${trendGlyph[metric.trend] ?? ""}` : metric.label,
-      {
-        x: restX + 0.25,
-        y: y + restCellHeight * 0.6,
-        w: restWidth - 0.5,
-        h: restCellHeight * 0.35,
-        fontFace: fonts.body,
-        fontSize: text.caption,
-        color: colors.textSecondary,
-      }
-    );
-  });
-
-  applyChrome(slide, theme, { pageNumber });
-
-  return slide;
-}
-
-// opts: { pageNumber }。固定プリミティブだけでなく、pptx-buildが自由設計するスライドからも
+// opts: { pageNumber }。定型スライドだけでなく、pptx-buildが自由設計するスライドからも
 // 呼ばれる(一貫性のため)。共通ヘッダー/フッター帯を持たない方針のため、ページ番号以外の
 // 装飾は加えない。
 function applyChrome(slide, theme, opts) {
@@ -568,8 +353,7 @@ function applyChrome(slide, theme, opts) {
   return slide;
 }
 
-// 固定プリミティブを代表的なサンプルで呼び出すビジュアルQA用デッキ。addPeerGridSlideは件数を
-// 変えて2回呼び、ブロックサイズのロジックの一貫性を確認する。文言は自由に書き換えてよい。自由
+// 定型スライドを代表的なサンプルで呼び出すビジュアルQA用資料。文言は自由に書き換えてよい。自由
 // 設計スライドの実例はpptx-buildが都度ゼロから書く対象のため、関数化せずここに直接書き足す
 // 一回性のサンプル。
 function buildSamplePresentation() {
@@ -590,7 +374,7 @@ function buildSamplePresentation() {
   });
 
   // 自由設計例1: 標準コンテンツ(左タイトル・右淡色セルに箇条書き)。キッカーは使わず、
-  // 角丸なし塗りセルという固定プリミティブと共通の視覚言語を踏襲する。
+  // 角丸なし塗りセルという定型スライドと共通の視覚言語を踏襲する。
   {
     const { colors, fonts, text, slide: slideSize, spacing } = theme;
     const slide = pres.addSlide();
@@ -627,7 +411,7 @@ function buildSamplePresentation() {
     slide.addText(
       bulletRuns(
         [
-          "固定プリミティブに当てはまらない内容はpptx-buildが都度自由に設計する",
+          "定型スライドに当てはまらない内容はpptx-buildが都度自由に設計する",
           "色・角丸なしの塗りセルはBold Bentoの視覚言語を踏襲する",
           "文字量が多い場合はスライド分割を検討する",
         ],
@@ -644,38 +428,6 @@ function buildSamplePresentation() {
 
     applyChrome(slide, theme, { pageNumber: 3 });
   }
-
-  addPeerGridSlide(pres, theme, {
-    title: "対等な要素の列挙(3件)",
-    items: [
-      { heading: "特徴A", body: "説明文A" },
-      { heading: "特徴B", body: "説明文B" },
-      { heading: "特徴C", body: "説明文C" },
-    ],
-    pageNumber: 4,
-  });
-
-  addPeerGridSlide(pres, theme, {
-    title: "対等な要素の列挙(5件)",
-    items: [
-      { heading: "項目1", body: "説明1" },
-      { heading: "項目2", body: "説明2" },
-      { heading: "項目3", body: "説明3" },
-      { heading: "項目4", body: "説明4" },
-      { heading: "項目5", body: "説明5" },
-    ],
-    pageNumber: 5,
-  });
-
-  addMetricRowSlide(pres, theme, {
-    title: "指標の強調",
-    metrics: [
-      { value: "120%", label: "主要指標", trend: "up" },
-      { value: "45件", label: "指標2" },
-      { value: "8.2", label: "指標3", trend: "flat" },
-    ],
-    pageNumber: 6,
-  });
 
   // 自由設計例2: テキスト+画像の非対称ペア(片側アンカーセル+反対側は画像プレースホルダー)。
   // 対等要素の列挙とは異なり、重みの非対称がこのレイアウトの前提。
@@ -731,7 +483,7 @@ function buildSamplePresentation() {
       label: "IMAGE PLACEHOLDER",
     });
 
-    applyChrome(slide, theme, { pageNumber: 7 });
+    applyChrome(slide, theme, { pageNumber: 4 });
   }
 
   addClosingSlide(pres, theme, {
@@ -761,8 +513,6 @@ module.exports = {
   addTitleSlide,
   addSectionSlide,
   addClosingSlide,
-  addPeerGridSlide,
-  addMetricRowSlide,
   applyChrome,
   buildSamplePresentation,
 };

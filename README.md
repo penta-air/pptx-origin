@@ -21,16 +21,16 @@ npm install
 1.の `--agent universal` は、インストール先を `.agents/skills/pptx/` に固定するための指定(未指定だとマシン上で検出されたエージェント次第で配置先が変わり非決定的になる)。
 Claude Code自身にもスキルとして認識させたい場合は `--agent claude-code` を追加すれば `.claude/skills/pptx` にもシンボリックリンクが張られるが、本リポジトリのSkill群は常に `.agents/skills/pptx/SKILL.md` をファイルとして直接読んで指示に従う設計のため、必須ではない。
 
-これだけで `design-system/default/`(ニュートラルな配色・固定プリミティブ一式。詳細は後述)がそのまま使える状態になっており、デザインシステム生成のためのセットアップ手順は不要。
+これだけで `design-system/default/`(ニュートラルな配色・定型スライド一式。詳細は後述)がそのまま使える状態になっており、デザインシステム生成のためのセットアップ手順は不要。
 独自のブランドを使いたい場合のみ、Claude Codeで `pptx-design-system-init` スキルを呼び出す(下記「使い方」参照)。以下のいずれかを選べる:
 
 - 何も用意せず `design-system/default/` のニュートラルな配色・レイアウトのまま進める。
 - `design-system/presets/`(`PRESETS.md`参照)から雰囲気の近い配色プリセットを選ぶ → `pptx-design-system-init` スキルにその旨を伝えると、プリセット一覧を提示した上で選んだ配色を新しいブランド用の `color-definition.json` としてコピーしてくれる。
 - 会社名・製品名などブランドを指定し、独自の色定義ファイル(または対話でのヒアリング)から `design-system/<brand>/` に専用のテーマ一式を作る。
 
-いずれの場合も、色だけでなく**表紙・章区切り・クロージング・対等要素の列挙・指標強調といった少数の固定プリミティブ、およびそれ以外のスライドが従うデザインシステムスペック(モチーフ・装飾ルール・余白グリッド等)がブランドごとに新規設計**される。
+いずれの場合も、色だけでなく**表紙・章区切り・クロージングといった少数の定型スライド、およびそれ以外のスライドが従うデザインシステムスペック(モチーフ・装飾ルール・余白グリッド等)がブランドごとに新規設計**される。
 `pptx-design-system-init` スキルが公式pptxスキルのデザイン力・ビジュアルQA手順を使って、このブランド専用の `components.js`・`DESIGN_SYSTEM.md`・`preview.pptx` を一度だけ作り込み、以降はその資産を固定で使い回す(`default` は既にこの資産を持つ状態でコミット済みなので、初回セットアップでは何もしなくてよい)。
-固定プリミティブに当てはまらないスライド(標準コンテンツ・比較・テーブル等)は、資料生成のたびに公式pptxスキルがデザインシステムスペックの範囲内で都度自由に設計する。
+定型スライドに当てはまらないスライド(標準コンテンツ・比較・テーブル等)は、資料生成のたびに公式pptxスキルがデザインシステムスペックの範囲内で都度自由に設計する。
 
 ## プロジェクト構成
 
@@ -44,16 +44,16 @@ pptx-origin/
 │                                                # .agents/skills/pptx/ (公式スキル本体、非バンドル)を除外
 ├── .agents/
 │   ├── reference/
-│   │   └── fixed-primitives-contract.md        # 固定プリミティブの内容契約と自由設計カテゴリの参考一覧(ブランド非依存、
+│   │   └── fixed-primitives-contract.md        # 定型スライドの内容契約と自由設計カテゴリの参考一覧(ブランド非依存、
 │   │                                            # pptx-build/pptx-design-system-init/pptx-qa の3Skillが横断的に参照する共有ファイル)
 │   └── skills/
 │       ├── pptx/                               # 公式pptxスキル(セットアップ手順1で導入、リポジトリにはバンドルしない)
 │       ├── pptx-design-system-init/
 │       │   ├── SKILL.md                        # 色定義ファイル→theme.js→preview.pptx生成
-│       │   └── assets/                         # コピー用スケルトン(components.skeleton.js・DESIGN_SYSTEM.skeleton.md)
+│       │   └── assets/                         # コピー用ひな形(components.skeleton.js・DESIGN_SYSTEM.skeleton.md)
 │       ├── pptx-theme-from-tokens/SKILL.md     # DTCG形式トークン→color-definition.json変換
 │       ├── pptx-research/SKILL.md              # 発散/調査フェーズ(スキップ可、AI自動補完)
-│       ├── pptx-ssot/SKILL.md                  # SSOT.md作成
+│       ├── pptx-ssot/SKILL.md                  # 構成案(ssot.md)作成
 │       ├── pptx-build/SKILL.md                 # 公式pptxスキルへのオーケストレーション
 │       └── pptx-qa/SKILL.md                    # 公式pptxスキルのQAセクション遵守+独自チェック
 ├── .claude/
@@ -73,19 +73,19 @@ pptx-origin/
 │   └── <brand>/                                 # ブランドごとのテーマ+レイアウト一式(任意名称、ユーザーが決める)
 │       ├── color-definition.json               #   このブランドの色定義(入力)
 │       ├── theme.js                            #   生成物(色・フォントの土台)
-│       ├── components.js                       #   このブランド専用の固定プリミティブコード(公式pptxスキルで新規設計)
-│       ├── DESIGN_SYSTEM.md                    #   このブランドのデザインシステムスペック(視覚言語・固定プリミティブのcontent契約)
-│       └── preview.pptx                        #   生成物(固定プリミティブのビジュアルQA用サンプルデッキ)
+│       ├── components.js                       #   このブランド専用の定型スライドコード(公式pptxスキルで新規設計)
+│       ├── DESIGN_SYSTEM.md                    #   このブランドのデザインシステムスペック(視覚言語・定型スライドのcontent契約)
+│       └── preview.pptx                        #   生成物(定型スライドのビジュアルQA用サンプル資料)
 │           # ↑ design-system/default/ のみリポジトリにコミットされるゼロコンフィグ用の1セット。
 │           #   それ以外の <brand> はユーザー固有の成果物として .gitignore される。
-│   # 固定プリミティブの名称・用途・contentフィールドの契約自体はブランドに依らず
+│   # 定型スライドの名称・用途・contentフィールドの契約自体はブランドに依らず
 │   # .agents/docs/fixed-primitives-contract.md で定義される
 │   # (視覚実現だけがブランドごとに異なる)。
 └── projects/
     ├── .gitkeep                                 # projects/<slug>/ はユーザー固有の成果物として .gitignore される
     └── <slug>/                                  # 1件の資料の作業ディレクトリ(任意名称、資料の題材から決める)
-        ├── ssot.md                              #   入力: 対象読者・目的・章構成等をまとめたSSOT(pptx-ssotが作成)
-        ├── <slug>.pptx                          #   生成物: 完成したデッキ(pptx-buildが生成)
+        ├── ssot.md                              #   入力: 対象読者・目的・章構成等をまとめた構成案(pptx-ssotが作成)
+        ├── <slug>.pptx                          #   生成物: 完成した資料(pptx-buildが生成)
         └── build-<slug>.js                      #   生成物: 新規作成時のPptxGenJS生成スクリプト(再現用に保持)
 ```
 
@@ -97,19 +97,19 @@ Claude Code上で、パイプラインの各工程に対応する `pptx-*` ス�
 ```mermaid
 flowchart LR
     subgraph REUSE["使い回しOK(資料が変わっても作り直し不要)"]
-        S1["① デザインの土台づくり<br/>色・雰囲気に加え、少数の固定プリミティブとデザインシステムをブランド専用に設計"]
+        S1["① デザインの土台づくり<br/>色・雰囲気に加え、少数の定型スライドとデザインシステムをブランド専用に設計"]
     end
     S2["② 内容の壁打ち<br/>誰に何を伝えたい資料か話す"]
-    S3["③ 構成をまとめる<br/>話した内容を1つの文書に整理(SSOT)"]
+    S3["③ 構成をまとめる<br/>話した内容を1つの文書に整理(構成案)"]
     S4["④ スライド生成 & チェック<br/>PPTXを自動生成し、見た目を確認"]
     OUT(["完成した資料 (.pptx)"])
 
     S1 --> S2 --> S3 --> S4 --> OUT
 ```
 
-- **①だけ使い回し可能。** ブランド(会社名・製品名など任意の名前をつけて `design-system/<brand>/` にまとめて保存される)ごとに一度作れば、以降そのブランドの資料では①をやり直す必要はない(最初は何も決めなくても `design-system/default/` のニュートラルなデザインがそのまま使える)。①は色定義に加えて、公式pptxスキルのデザイン力を使った固定プリミティブ(表紙・章区切り・クロージング・対等要素の列挙・指標強調)の新規設計とビジュアルQAまで行うため、資料生成(②〜④)よりも重い一度きりの工程になる。それ以外のスライドは、①で決めたデザインシステムスペックの範囲内で④のたびに都度自由に設計される。
+- **①だけ使い回し可能。** ブランド(会社名・製品名など任意の名前をつけて `design-system/<brand>/` にまとめて保存される)ごとに一度作れば、以降そのブランドの資料では①をやり直す必要はない(最初は何も決めなくても `design-system/default/` のニュートラルなデザインがそのまま使える)。①は色定義に加えて、公式pptxスキルのデザイン力を使った定型スライド(表紙・章区切り・クロージング)の新規設計とビジュアルQAまで行うため、資料生成(②〜④)よりも重い一度きりの工程になる。それ以外のスライドは、①で決めたデザインシステムスペックの範囲内で④のたびに都度自由に設計される。
 - ②〜④は資料を作るたびに毎回実行する。②は内容が既に固まっていればスキップも可能。
-- ③で作る `projects/<slug>/ssot.md` と④で作る `projects/<slug>/<slug>.pptx` は、資料の題材に沿った名前(または任意の名前)を都度つける。1件の資料の材料(SSOT)・最終成果物(.pptx)・生成スクリプトは同じ `projects/<slug>/` にまとまる。①のブランド名とは別の命名軸(1つのブランドを複数の資料が使い回す関係)。
+- ③で作る `projects/<slug>/ssot.md` と④で作る `projects/<slug>/<slug>.pptx` は、資料の題材に沿った名前(または任意の名前)を都度つける。1件の資料の材料(構成案)・最終成果物(.pptx)・生成スクリプトは同じ `projects/<slug>/` にまとまる。①のブランド名とは別の命名軸(1つのブランドを複数の資料が使い回す関係)。
 - 対応するSkill: ① `pptx-design-system-init`(必要なら `pptx-theme-from-tokens` も) / ② `pptx-research` / ③ `pptx-ssot` / ④ `pptx-build` → `pptx-qa`。
 
 ```
@@ -122,14 +122,14 @@ flowchart LR
 # 例: Figma等のDesign Tokensファイルからcolor-definition.jsonを作りたいとき
 > pptx-theme-from-tokens スキルで design-tokens.json から "acme" ブランドの色定義を作って
 
-# 例: 資料の内容を詰めてからSSOTを作りたいとき
+# 例: 資料の内容を詰めてから構成案を作りたいとき
 > pptx-research スキルでテーマについて壁打ちしたい
-> 内容が固まったので pptx-ssot スキルでSSOTにまとめて
+> 内容が固まったので pptx-ssot スキルで構成案にまとめて
 
-# 例: SSOTからスライドを生成し、QAまで通したいとき
-> pptx-build スキルで projects/example/ssot.md から "acme" ブランドのデッキを作って
-> できたデッキに pptx-qa スキルでQAをかけて
+# 例: 構成案からスライドを生成し、QAまで通したいとき
+> pptx-build スキルで projects/example/ssot.md から "acme" ブランドの資料を作って
+> できた資料に pptx-qa スキルでQAをかけて
 ```
 
 各スキルの詳細な手順は `.agents/skills/pptx-*/SKILL.md`(実体。Claude Codeからは `.claude/skills/pptx-*/` のシンボリックリンク経由で参照される)側に委譲されている。
-固定プリミティブの内容契約は `.agents/docs/fixed-primitives-contract.md` を参照。
+定型スライドの内容契約は `.agents/docs/fixed-primitives-contract.md` を参照。

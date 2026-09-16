@@ -1,6 +1,6 @@
 ---
 name: pptx-qa
-description: pptx-build が既に生成した .pptx デッキに対して品質保証を実行する――公式Anthropic pptxスキル自体のQA/ビジュアル検査セクションに加え、本リポジトリ独自のチェック(ブランドカラーの遵守、視覚パターンの多様性、フォントの一貫性、ブランドの固定構造プリミティブ〔title/section/closing/peer-grid/metric-row〕の正しい使用)を行う。pptx-build はデッキの生成・編集直後にこのスキルを自動的に呼び出すようになったため、同一会話内で pptx-build の実行が完了した直後にこのスキルを重ねて呼び出さないこと――既に実行済みである。ユーザーが以前のセッション/ターンで既に存在するデッキの単体レビューを求めた場合に自分で呼び出す――「できたデッキをQAして」「review this deck before I send it」「スライドをチェックして」「quality check the pptx」など。デッキの内容を生成・修正する用途には使用しない(それは pptx-build の役割)。このスキルは、デッキが既に存在する状態での最終ステップとしてのみ実行する。
+description: pptx-build が既に生成した .pptx 資料に対して品質保証を実行する――公式Anthropic pptxスキル自体のQA/ビジュアル検査セクションに加え、本リポジトリ独自のチェック(ブランドカラーの遵守、視覚パターンの多様性、フォントの一貫性、ブランドの定型スライド〔title/section/closing〕の正しい使用)を行う。pptx-build は資料の生成・編集直後にこのスキルを自動的に呼び出すようになったため、同一会話内で pptx-build の実行が完了した直後にこのスキルを重ねて呼び出さないこと――既に実行済みである。ユーザーが以前のセッション/ターンで既に存在する資料の単体レビューを求めた場合に自分で呼び出す――「できた資料をQAして」「review this deck before I send it」「スライドをチェックして」「quality check the pptx」など。資料の内容を生成・修正する用途には使用しない(それは pptx-build の役割)。このスキルは、資料が既に存在する状態での最終ステップとしてのみ実行する。
 ---
 
 # pptx-qa
@@ -11,7 +11,7 @@ description: pptx-build が既に生成した .pptx デッキに対して品質�
 
 ## 前提
 
-`.agents/skills/pptx/` に公式 pptx スキルが導入済みであること、かつ `pptx-build` Skill で生成済みの `.pptx`(既定では `projects/<slug>/<slug>.pptx`)が存在すること。どちらか欠けている場合は、先に該当するセットアップ (README のセットアップ手順) または `pptx-build` の実行を案内する。QAで参照する `design-system/<brand>/theme.js` は、そのデッキの生成時に `pptx-build` が使ったものと同じブランドを使う(通常はユーザーに確認済みのはずだが、不明な場合は改めて確認する)。
+`.agents/skills/pptx/` に公式 pptx スキルが導入済みであること、かつ `pptx-build` Skill で生成済みの `.pptx`(既定では `projects/<slug>/<slug>.pptx`)が存在すること。どちらか欠けている場合は、先に該当するセットアップ (README のセットアップ手順) または `pptx-build` の実行を案内する。QAで参照する `design-system/<brand>/theme.js` は、その資料の生成時に `pptx-build` が使ったものと同じブランドを使う(通常はユーザーに確認済みのはずだが、不明な場合は改めて確認する)。
 
 ## 手順
 
@@ -22,14 +22,17 @@ description: pptx-build が既に生成した .pptx デッキに対して品質�
    公式スキルの一般的な QA だけではカバーされない、このリポジトリ固有の品質基準として、以下を目視・照合で確認する:
 
    - **ブランドカラー遵守**: 各スライドで使われている色が `design-system/<brand>/theme.js` の `colors` (`primary`/`secondary`/`textPrimary`/`textSecondary`/`bgDefault`/`bgAccent`/`border`) に定義された値と一致しているか。テーマにない色が (グラフの自動配色等を除いて) 混入していないか。
-   - **視覚パターンの多様性**: 固定プリミティブ(表紙・章区切り・クロージング・対等な要素の列挙・指標の強調)と自由設計スライドの両方を通して、同一の見た目が連続して使われていないか。章の内容と選ばれた見せ方(固定プリミティブか自由設計か、自由設計ならどのカテゴリか)が `.agents/docs/fixed-primitives-contract.md` と整合しているか。
+   - **視覚パターンの多様性**: 定型スライド(表紙・章区切り・クロージング)と自由設計スライドの両方を通して、同一の見た目が連続して使われていないか。章の内容と選ばれた見せ方(定型スライドか自由設計か、自由設計ならどのカテゴリか)が `.agents/docs/fixed-primitives-contract.md` と整合しているか。
    - **フォント統一**: 全スライドで `design-system/<brand>/theme.js` の `fonts.heading` / `fonts.body` のみが使われており、意図しないフォールバックフォントや混在が起きていないか。
-   - **固定プリミティブの正しい利用**: 表紙・章区切り・クロージング・対等な要素の列挙・指標の強調に該当するスライドについて、そのデッキを生成した `projects/<slug>/build-<slug>.js`(新規作成の場合)のソースを確認し、`design-system/<brand>/components.js` の該当関数 (`addTitleSlide`/`addSectionSlide`/`addClosingSlide`/`addPeerGridSlide`/`addMetricRowSlide`)を実際に`require`して呼び出しているか、独自に同等の見た目を再実装してブレていないかを確認する。
+   - **定型スライドの正しい利用**: 表紙・章区切り・クロージングに該当するスライドについて、その資料を生成した `projects/<slug>/build-<slug>.js`(新規作成の場合)のソースを確認し、`design-system/<brand>/components.js` の該当関数 (`addTitleSlide`/`addSectionSlide`/`addClosingSlide`)を実際に`require`して呼び出しているか、独自に同等の見た目を再実装してブレていないかを確認する。
 
 3. **問題が見つかった場合、修正はこの Skill 内で行わない。**
    検出した問題点を具体的に (スライド番号・箇所・何が期待値とズレているか) 報告し、修正自体は `pptx-build` Skill (新規作成なら PptxGenJS スクリプトの修正、既存編集なら公式スキルの「Editing existing decks and templates」節のワークフロー) に差し戻す。本 Skill は検査結果の報告までが責務。
 
+4. **完了報告の前に、ビジュアル検査で生成した中間ファイルを削除する。**
+   手順1の「Converting to Images」で作った `output.pdf`・`slide-*.jpg` は本 Skill のためだけの一時ファイルであり、成果物 (`projects/<slug>/<slug>.pptx`) と同じディレクトリに残すと出力ディレクトリを汚してしまう。問題の有無によらず (問題なしで完了する場合・手順3で差し戻す場合のどちらも)、この Skill の完了報告を出す前にこれらのファイルを削除する。
+
 ## 注意事項
 
 - 独自のスクリーンショット取得スクリプトやピクセル比較ロジックを新たに書かない。公式スキルが提供する QA 手段を使う。
-- 「ブランドカラー遵守」「視覚パターンの多様性」「フォント統一」「固定プリミティブの正しい利用」の4点は、この Skill が独自に持つ**唯一の**追加チェック項目であり、それ以外の品質判断 (文章の質、内容の正確性等) は公式スキルの QA セクションの範囲に委ねる。
+- 「ブランドカラー遵守」「視覚パターンの多様性」「フォント統一」「定型スライドの正しい利用」の4点は、この Skill が独自に持つ**唯一の**追加チェック項目であり、それ以外の品質判断 (文章の質、内容の正確性等) は公式スキルの QA セクションの範囲に委ねる。

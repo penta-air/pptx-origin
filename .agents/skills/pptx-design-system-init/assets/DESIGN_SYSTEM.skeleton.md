@@ -1,13 +1,13 @@
 # design-system/<brand>/DESIGN_SYSTEM.md のひな形(構成のみ)
 
 このファイルは `design-system/<brand>/DESIGN_SYSTEM.md` を書く際の**章立てのひな形**であり、視覚的な意思決定の中身(色の役割分担・モチーフ・角丸の有無等)は一切含まない。
-`<brand>` 固有の内容で埋めること。固定プリミティブの名称・関数名・用途・`content`フィールド契約自体は `.agents/docs/fixed-primitives-contract.md` が正であり、ここでの記述はその「このブランドではどう視覚化したか」および「このブランドの自由設計スライドはどういうルールに従うか」を書く場所に過ぎない。
+`<brand>` 固有の内容で埋めること。定型スライドの名称・関数名・用途・`content`フィールド契約自体は `.agents/docs/fixed-primitives-contract.md` が正であり、ここでの記述はその「このブランドではどう視覚化したか」および「このブランドの自由設計スライドはどういうルールに従うか」を書く場所に過ぎない。
 
 ---
 
 # design-system/<brand>/DESIGN_SYSTEM.md
 
-`<brand>` ブランドのデザインシステムスペック。`design-system/<brand>/components.js` が実装する固定プリミティブの視覚実現と、`pptx-build` がSSOTごとに自由設計するスライドの両方が、ここに書くルールに従う。固定プリミティブの名称・用途・`content`フィールド契約自体はブランドに依存せず `.agents/docs/fixed-primitives-contract.md` で定義されている。
+`<brand>` ブランドのデザインシステムスペック。`design-system/<brand>/components.js` が実装する定型スライドの視覚実現と、`pptx-build` が構成案ごとに自由設計するスライドの両方が、ここに書くルールに従う。定型スライドの名称・用途・`content`フィールド契約自体はブランドに依存せず `.agents/docs/fixed-primitives-contract.md` で定義されている。
 
 色を変更した場合は `design-system/<brand>/color-definition.json` を編集し、`node design-system/generate-theme.js <brand>` → `node design-system/<brand>/components.js` の順に再実行し、`design-system/<brand>/preview.pptx` を再生成すること(デザインシステムのルール自体を作り直す場合は `pptx-design-system-init` Skill を再度実行する)。
 
@@ -37,22 +37,20 @@
 - 見出し: `theme.fonts.heading`、本文: `theme.fonts.body`。
 - <この組み合わせを選んだ理由・使い分けの補足があれば追記>
 
-## 固定プリミティブ一覧
+## 定型スライド一覧
 
 `.agents/docs/fixed-primitives-contract.md`の契約と一致させること。視覚実現の要点だけをこの表に書く(詳細な実装ルールは各関数のコード内コメントに書けばよい)。
 
 | # | 関数名 | 用途 | このブランドでの構成 |
 |---|---|---|---|
-| 1 | `addTitleSlide` | デッキ冒頭の表紙 | <> |
+| 1 | `addTitleSlide` | 資料冒頭の表紙 | <> |
 | 2 | `addSectionSlide` | 章の導入 | <> |
-| 3 | `addClosingSlide` | デッキ末尾の挨拶・連絡先 | <> |
-| 4 | `addPeerGridSlide` | 2〜6個の対等な要素の列挙 | <件数ごとの配置ロジックも記述> |
-| 5 | `addMetricRowSlide` | 2〜4個の主要指標の強調 | <> |
-| 6 | `applyChrome` | ページ番号等のランニング要素 | <配置位置・スタイル> |
+| 3 | `addClosingSlide` | 資料末尾の挨拶・連絡先 | <> |
+| 4 | `applyChrome` | ページ番号等のランニング要素 | <配置位置・スタイル> |
 
 ## 自由設計スライドの指針
 
-固定プリミティブに当てはまらない内容(標準コンテンツ・画像中心・テキスト+画像・比較・テーブル・引用・2×2マトリクス・プロセスタイムライン・強調メッセージ、`.agents/docs/fixed-primitives-contract.md`の自由設計カテゴリ参照)は、`pptx-build`がSSOTの内容ごとに都度ゼロから設計する。
+定型スライドに当てはまらない内容(標準コンテンツ・画像中心・テキスト+画像・対等な要素の列挙・指標の強調・比較・テーブル・引用・2×2マトリクス・プロセスタイムライン・強調メッセージ、`.agents/docs/fixed-primitives-contract.md`の自由設計カテゴリ参照)は、`pptx-build`が構成案の内容ごとに都度ゼロから設計する。
 その際も本ドキュメントの「視覚言語」「装飾ルール」「余白グリッド」「フォントペアリング」には従うこと。<このブランド固有の追加ルール(例: 自由設計スライドでも必ず1つ視覚要素を入れる、写真プレースホルダーの扱い等)があればここに追記する>
 
 ## 共通の実装ルール
@@ -66,4 +64,4 @@
 1. `design-system/<brand>/color-definition.json` を編集する。
 2. `node design-system/generate-theme.js <brand>` を実行し、`design-system/<brand>/theme.js` を再生成する。
 3. `node design-system/<brand>/components.js` を実行し、`design-system/<brand>/preview.pptx` を再生成する。
-4. 生成された `.pptx` を開き、固定プリミティブすべてに変更後の配色が正しく反映されていることを目視確認する。
+4. 生成された `.pptx` を開き、定型スライドすべてに変更後の配色が正しく反映されていることを目視確認する。
